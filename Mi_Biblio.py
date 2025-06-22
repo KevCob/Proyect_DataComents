@@ -1,12 +1,9 @@
 import plotly.express as px
 import pandas as pd
-import plotly as st
 from collections import Counter
-from geotext import GeoText
 from textblob import TextBlob
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
-
 
 def plot_comentarios_por_categoria(df):
     conteo = df['categoria'].value_counts().reset_index()
@@ -67,24 +64,18 @@ def evolucion_palabras_clave(df, palabras):
     fig = px.line(df.groupby(df['fecha'].dt.date)[palabras].sum(), title='Evolución de Términos Clave')
     return fig
 
-
-
 def analizar_sentimiento(df):
-    # Paso 1: Limpiar datos (reemplazar NaN o None con strings vacíos)
     df['contenido_comentario'] = df['contenido_comentario'].fillna("")
-    
-    # Paso 2: Calcular sentimiento para cada comentario
+
     sentimientos = []
     for comentario in df['contenido_comentario']:
-        if comentario.strip() == "":  # Si el comentario está vacío
-            sentimientos.append(0.0)  # Sentimiento neutro
+        if comentario.strip() == "":  
+            sentimientos.append(0.0)  
         else:
-            blob = TextBlob(comentario)  # Analizar sentimiento
+            blob = TextBlob(comentario)  
             sentimientos.append(blob.sentiment.polarity)
     
-    df['sentimiento'] = sentimientos  # Añadir columna con resultados
-    
-    # Paso 3: Clasificar en categorías (Positivo, Neutral, Negativo)
+    df['sentimiento'] = sentimientos  
     categorias = []
     for valor in df['sentimiento']:
         if valor > 0:
@@ -94,35 +85,78 @@ def analizar_sentimiento(df):
         else:
             categorias.append("Neutral")
     
-    df['sentimiento_categoria'] = categorias  # Añadir columna de categorías
+    df['sentimiento_categoria'] = categorias  
     
     fig = px.pie(df, names='sentimiento_categoria', title='Distribución de Sentimientos')
     return fig
 
 def generar_nube_palabras(df):
-    # Obtener todos los comentarios
-    texto = ' '.join(df['contenido_comentario'].dropna())
+    palabras_excluidas = {
+        'yo', 'tú', 'él', 'ella', 'nosotros', 'vosotros', 'ellos', 'ellas', 'usted', 'ustedes',
+        'mi', 'tu', 'su', 'nuestro', 'vuestro', 'su', 'mío', 'tuyo', 'suyo',
+        'que', 'cual', 'quien', 'cuyo', 'cuanto', 'donde', 'cuando', 'como',
+        'y', 'o', 'pero', 'ni', 'que', 'si', 'aunque', 'porque', 'como',
+        'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',
+        'a', 'ante', 'bajo', 'cabe', 'con', 'contra', 'de', 'desde', 'en', 'entre', 
+        'hacia', 'hasta', 'para', 'por', 'según', 'sin', 'so', 'sobre', 'tras',
+        'aquí', 'allí', 'ahora', 'antes', 'después', 'hoy', 'mañana', 'ayer', 
+        'siempre', 'nunca', 'tarde', 'pronto', 'bien', 'mal', 'mejor', 'peor',
+        'muy', 'mucho', 'poco', 'bastante', 'demasiado', 'casi', 'todo', 'nada', 'porque','también','además'
+    }
     
-    # Filtrar palabras con más de 5 caracteres
-    palabras_filtradas = [word for word in texto.split() if len(word) > 5]
+    texto = ' '.join(df['contenido_comentario'].dropna().astype(str))
+    
+    palabras_filtradas = [
+        word.lower() for word in texto.split() 
+        if len(word) > 5 and word.lower() not in palabras_excluidas
+    ]
     texto_filtrado = ' '.join(palabras_filtradas)
     
-    # Generar la nube de palabras
     wordcloud = WordCloud(
         width=800,
         height=400,
         background_color='white',
-        min_word_length=6  # Asegura que solo incluye palabras de 6+ caracteres
+        min_word_length=6,
+        stopwords=palabras_excluidas
     ).generate(texto_filtrado)
     
-    # Mostrar la nube
     fig = plt.figure(figsize=(10, 5))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
-    plt.title('Nube de Palabras (palabras con 6+ caracteres)')
+    plt.title('Nube de Palabras Relevantes')
     return fig
 
-def plot_longitud_comentarios(df):
-    df['longitud'] = df['contenido_comentario'].str.len()
-    fig = px.histogram(df, x='longitud', nbins=50, title='Distribución de Longitud de Comentarios')
+def analizar_violencia(df, palabras_violencia=None):
+    if palabras_violencia is None:
+        palabras_violencia = ['matar', 'asesinar', 'destruir', 'violencia', 'golpear', 'apuñalar', 'estrangular', 'torturar', 'quemar', 'violar', 'atacar']
+    
+    df['violencia'] = df['contenido_comentario'].str.lower().str.count('|'.join(palabras_violencia))
+    df_violencia = df.groupby('categoria')['violencia'].sum().reset_index()
+    
+    fig = px.pie(
+        df_violencia,
+        names='categoria',
+        values='violencia',
+        title='Distribución de Lenguaje Violento por Categoría'
+    )
+    return fig
+
+def identificar_comentarios_repetidos(df, top_n=5):
+    df['contenido_lower'] = df['contenido_comentario'].str.lower()
+ 
+    repetidos = df[df.duplicated('contenido_lower', keep=False)]
+    
+    top_comentarios = repetidos.groupby('contenido_lower').size().nlargest(top_n).reset_index()
+    top_comentarios.columns = ['Comentario', 'Repeticiones']
+
+    fig = px.bar(
+        top_comentarios,
+        x='Repeticiones',
+        y='Comentario',
+        orientation='h',
+        title=f'Top {top_n} Comentarios Más Repetidos',
+        labels={'Repeticiones': 'Número de repeticiones', 'Comentario': 'Texto del comentario'}
+    )
+
+    fig.update_layout(yaxis={'categoryorder':'total ascending'})
     return fig
