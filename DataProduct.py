@@ -1,5 +1,5 @@
 import streamlit as st
-import Mi_Biblio as mb
+import Data_Biblio as mb
 import pandas as pd
 import json
 from PIL import Image
@@ -34,7 +34,7 @@ def cargar_datos():
                     "categoria": noticia["categoria"],
                     "fecha_comentario": comentario.get("fecha", "Sin fecha"),
                     "contenido_comentario": comentario.get("contenido", ""),
-                    "usuario": comentario.get("usuario", "Anónimo")  
+                    "usuario": comentario.get("autor", "Anónimo")  
                 })
         return pd.DataFrame(datos_aplanados)
     
