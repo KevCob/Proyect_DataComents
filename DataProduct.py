@@ -5,6 +5,11 @@ import json
 from PIL import Image
 
 st.set_page_config(
+    page_title="EcoCubano",
+    # ... otras configuraciones si las tienes ...
+    **locale="es_ES"** )
+
+st.set_page_config(
     page_title="EcoCubano | Análisis de Comentarios",
     page_icon="📢",
     layout="wide"
