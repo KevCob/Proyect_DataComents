@@ -1,0 +1,3 @@
+# packages.txt
+# Esto instruye al servidor a instalar todos los paquetes de localización.
+locales-all
