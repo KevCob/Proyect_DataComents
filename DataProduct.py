@@ -6,7 +6,7 @@ from PIL import Image
 
 st.set_page_config(
     page_title="EcoCubano | Análisis de Comentarios",
-    page_icon="🚨",
+    page_icon="🥥",
     layout="wide",
     locale="es_ES"
 )
