@@ -1,5 +1,5 @@
 import streamlit as st
-import data_biblio as mb
+import Data_Biblio as mb
 import pandas as pd
 import json
 from PIL import Image
