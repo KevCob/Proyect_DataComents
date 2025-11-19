@@ -4,12 +4,7 @@ import pandas as pd
 import json
 from PIL import Image
 
-st.set_page_config(
-    page_title="EcoCubano | Análisis de Comentarios",
-    page_icon="🥥",
-    layout="wide",
-    locale="es_ES"
-)
+st.set_page_config(page_title="EcoCubano | Análisis de Comentarios", page_icon="🥥", layout="wide", locale="es_ES")
 
 try:
     logo = Image.open('Logo.jpg')
